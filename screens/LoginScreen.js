@@ -1,92 +1,163 @@
 import { useState, useContext } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Dimensions,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+} from "react-native";
 import { AuthContext } from "../context/AuthContext";
+
+const { width, height } = Dimensions.get("window");
 
 const LoginScreen = () => {
   const { login } = useContext(AuthContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      await login(username, password);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topSection}>
-        <Image 
-          source={require("../assets/AdminIcon.png")} 
-          style={styles.profileImage} 
-        />
-        <Text style={styles.title}>Administrador</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Usuario"
-          autoCapitalize="none"
-          onChangeText={(text) => setUsername(text.trim().toLowerCase())}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          secureTextEntry
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity style={styles.button} onPress={() => login(username, password)}>
-          <Text style={styles.buttonText}>LOGIN</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.bottomSection}>
-        <Text style={styles.sgvibText}>SIGVIB</Text>
-      </View>
-    </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.topSection}>
+          <Image source={require("../assets/logo1.png")} style={styles.profileImage} />
+          <Text style={styles.title}>Bienvenido</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Usuario"
+            autoCapitalize="none"
+            placeholderTextColor="#d9b3ff"
+            onChangeText={(text) => setUsername(text.trim().toLowerCase())}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Contraseña"
+            secureTextEntry
+            placeholderTextColor="#d9b3ff"
+            onChangeText={setPassword}
+          />
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          </TouchableOpacity>
+
+          
+        </View>
+
+        <View style={styles.bottomSection}>
+          <Text style={styles.footerText}>SIGVIB</Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  topSection: {
+  container: {
     flex: 1,
-    backgroundColor: "#6B38E3",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 100,
+    backgroundColor: "#f4f4f9",
   },
-  bottomSection: {
-    flex: 1,
-    backgroundColor: "#ffffff", 
-    justifyContent: "flex-end", 
-    alignItems: "flex-start",   
-    paddingLeft: 20,            
-    paddingBottom: 20,    
+  scrollContainer: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: height * 0.03,
+  },
+  topSection: {
+    width: width * 0.9,
+    backgroundColor: "#7d2bd3",
+    alignItems: "center",
+    padding: width * 0.08,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6.84,
+    elevation: 8,
   },
   profileImage: {
-    width: 100, 
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 20, 
-    paddingVertical: 40,
+    width: width * 0.25,
+    height: width * 0.25,
+    borderRadius: width * 0.125,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "#c084f5",
   },
-  title: { fontSize: 35, fontWeight: "bold", marginBottom: 20, color: "#fff" },
+  title: {
+    fontSize: width * 0.06,
+    fontWeight: "700",
+    marginBottom: 20,
+    color: "#fff",
+  },
   input: {
-    width: "70%",
-    height: 35, 
-    borderBottomWidth: 1, 
-    borderBottomColor: "#000",
-    marginVertical: 8,
-    padding: 6,  
-    backgroundColor: "transparent",
-    borderRadius: 0, 
+    width: "100%",
+    height: height * 0.06,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#d9b3ff",
+    marginVertical: 10,
+    paddingHorizontal: 15,
+    fontSize: width * 0.045,
+    color: "#fff",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
   button: {
-    backgroundColor: "#B0E338",
-    width: "50%",  
-    paddingVertical: 10, 
-    borderRadius: 19,
-    marginTop: 20, 
+    backgroundColor: "#c084f5",
+    width: "100%",
+    paddingVertical: height * 0.02,
+    borderRadius: 10,
+    marginTop: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: width * 0.045,
+    fontWeight: "600",
+  },
+  linkButton: {
+    marginTop: 10,
+  },
+  linkText: {
+    color: "#d9b3ff",
+    fontSize: width * 0.04,
+    textDecorationLine: "underline",
+  },
+  bottomSection: {
+    marginTop: 20,
     alignItems: "center",
   },
-  buttonText: { color: "white", fontSize: 16, fontWeight: "bold", textAlign: "center" },
-  sgvibText: {
-    fontSize: 40,    
+  footerText: {
+    fontSize: width * 0.07,
     fontWeight: "bold",
-    color: "#000",   
+    color: "#7d2bd3",
+  },
+  errorText: {
+    color: "#ff6b6b",
+    marginTop: 10,
+    fontSize: width * 0.04,
   },
 });
 

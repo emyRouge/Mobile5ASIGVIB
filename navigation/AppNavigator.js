@@ -15,6 +15,8 @@ const MainNavigator = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user && user.role === "admin" ? (
           <Stack.Screen name="AdminStack" component={AdminNavigator} />
+          
+          
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
