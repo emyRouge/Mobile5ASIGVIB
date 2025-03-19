@@ -19,7 +19,7 @@ export const obtenerTodosLosBienes = async () => {
       throw new Error('No se encontró un token válido');
     }
 
-    const response = await fetch("http://localhost:8080/bienes", {
+    const response = await fetch("http://192.168.0.37:8080/bienes", {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

@@ -18,7 +18,7 @@ const { width } = Dimensions.get("window");
 
 const obtenerPorcentajeOcupacion = async () => {
   try {
-    const response = await fetch("http://localhost:8080/bienes/porcentaje-ocupacion");
+    const response = await fetch("http://192.168.0.37:8080/bienes/porcentaje-ocupacion");
     const data = await response.json();
     
     if (!response.ok) {
@@ -62,49 +62,52 @@ const PantallaResumenBienes = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#7d2bd3" />
+      <StatusBar barStyle="light-content" backgroundColor="#6a1b9a" />
       <View style={styles.topSection}>
         <Image source={require("../assets/logo1.png")} style={styles.logo} />
         <Text style={styles.title}>Resumen de Bienes</Text>
       </View>
-
+  
       <View style={styles.content}>
         {loading ? (
-          <ActivityIndicator size="large" color="#7d2bd3" />
+          <ActivityIndicator size="large" color="#ff4081" />
         ) : error ? (
           <Text style={styles.errorText}>{error}</Text>
         ) : (
           <View style={styles.chartContainer}>
             <PieChart
               data={[
-                { name: "Ocupados", population: datos.ocupados, color: "#ff6b6b", legendFontColor: "#333", legendFontSize: 15 },
-                { name: "Libres", population: datos.libres, color: "#4caf50", legendFontColor: "#333", legendFontSize: 15 },
+                { name: "Ocupados", population: datos.ocupados, color: "#d50000", legendFontColor: "#fff", legendFontSize: 15 },
+                { name: "Libres", population: datos.libres, color: "#00c853", legendFontColor: "#fff", legendFontSize: 15 },
               ]}
-              width={300}
+              width={width - 40}
               height={220}
               chartConfig={{
-                backgroundColor: "#fff",
-                backgroundGradientFrom: "#fff",
-                backgroundGradientTo: "#fff",
+                backgroundColor: "#303030",
+                backgroundGradientFrom: "#6a1b9a",
+                backgroundGradientTo: "#ab47bc",
                 decimalPlaces: 2,
-                color: (opacity = 1) => `rgba(125, 43, 211, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(125, 43, 211, ${opacity})`,
+                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
               }}
               accessor="population"
               backgroundColor="transparent"
               paddingLeft="15"
               absolute
             />
-
             <Text style={styles.info}>Bienes Ocupados: {datos.bienesOcupados}</Text>
             <Text style={styles.info}>Bienes Libres: {datos.bienesLibres}</Text>
           </View>
         )}
-
+  
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("PantallaAdminDispositivos")}>
           <Text style={styles.buttonText}>Ver Bienes</Text>
         </TouchableOpacity>
-
+  
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Scanner")}>
+          <Text style={styles.buttonText}>Escanear Código</Text>
+        </TouchableOpacity>
+  
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <Text style={styles.buttonText}>Cerrar Sesión</Text>
         </TouchableOpacity>
@@ -116,21 +119,25 @@ const PantallaResumenBienes = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f9",
+    backgroundColor: "#1c1c1e",
   },
   topSection: {
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#7d2bd3",
+    backgroundColor: "#6a1b9a",
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
+    shadowColor: "#ab47bc",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
   logo: {
     width: width * 0.25,
     height: width * 0.25,
     borderRadius: width * 0.125,
     borderWidth: 2,
-    borderColor: "#c084f5",
+    borderColor: "#ff80ab",
     marginBottom: 15,
   },
   title: {
@@ -148,16 +155,20 @@ const styles = StyleSheet.create({
   },
   info: {
     fontSize: 16,
-    color: "#333",
+    color: "#fff",
     marginTop: 10,
   },
   button: {
-    backgroundColor: "#c084f5",
+    backgroundColor: "#ff4081",
     padding: 12,
     borderRadius: 20,
     marginTop: 20,
     width: "70%",
     alignItems: "center",
+    shadowColor: "#ff80ab",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
   buttonText: {
     color: "#fff",
@@ -165,7 +176,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   logoutButton: {
-    backgroundColor: "#ff6b6b",
+    backgroundColor: "#d50000",
     padding: 12,
     borderRadius: 20,
     marginTop: 10,
@@ -173,7 +184,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   errorText: {
-    color: "#ff6b6b",
+    color: "#ff1744",
     fontSize: 16,
     textAlign: "center",
     marginVertical: 20,

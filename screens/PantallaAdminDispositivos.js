@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import {
   View,
   Text,
@@ -10,92 +10,80 @@ import {
   TextInput,
   SafeAreaView,
   StatusBar,
-  TouchableOpacity
+  TouchableOpacity,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { AuthContext } from "../context/AuthContext";
 import { obtenerTodosLosBienes } from "../api/bienesApi";
 
+const BienItem = ({ item, onPress }) => (
+  <TouchableOpacity style={styles.card} onPress={() => onPress(item)}>
+    <Image
+      source={{ uri: item.modelo?.foto || "https://via.placeholder.com/110" }}
+      style={styles.image}
+    />
+    <View style={styles.infoContainer}>
+      <Text style={styles.deviceName}>
+        {item.tipoBien?.nombre} - {item.lugar?.lugar}
+      </Text>
+      <Text style={styles.whiteText}>Responsable: {item.usuario?.nombre}</Text>
+      <Text style={styles.whiteText}>Modelo: {item.modelo?.nombreModelo}</Text>
+<Text style={styles.whiteText}>Marca: {item.marca?.nombre}</Text>
+
+    </View>
+    <View style={[styles.status, item.lugar ? styles.occupied : styles.free]}>
+      <MaterialIcons
+        name={item.lugar ? "block" : "check-circle"}
+        size={20}
+        color="white"
+      />
+      <Text style={styles.statusText}>{item.lugar ? "Ocupado" : "Libre"}</Text>
+    </View>
+  </TouchableOpacity>
+);
+
 export default function PantallaAdminDispositivos() {
   const { logout } = useContext(AuthContext);
+  const navigation = useNavigation();
   const [bienes, setBienes] = useState([]);
-  const [filteredBienes, setFilteredBienes] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [error, setError] = useState(null);
 
+  const fetchBienes = async () => {
+    try {
+      setError(null);
+      const data = await obtenerTodosLosBienes();
+      setBienes(data);
+    } catch (err) {
+      setError("No se pudieron cargar los bienes. Intenta nuevamente.");
+    }
+  };
+
   useEffect(() => {
-    const fetchBienes = async () => {
-      try {
-        const data = await obtenerTodosLosBienes();
-        setBienes(data);
-        setFilteredBienes(data);
-      } catch (err) {
-        setError("No se pudieron cargar los bienes");
-      }
-    };
     fetchBienes();
   }, []);
 
-  useEffect(() => {
-    if (searchText.trim() === "") {
-      setFilteredBienes(bienes);
-    } else {
-      const lowercasedSearchText = searchText.toLowerCase();
-      const filtered = bienes.filter((item) =>
-        (item.tipoBien?.nombre?.toLowerCase().includes(lowercasedSearchText)) ||
-        (item.lugar?.lugar?.toLowerCase().includes(lowercasedSearchText)) ||
-        (item.usuario?.nombre?.toLowerCase().includes(lowercasedSearchText)) ||
-        (item.modelo?.nombreModelo?.toLowerCase().includes(lowercasedSearchText)) ||
-        (item.codigoBarras?.toLowerCase().includes(lowercasedSearchText))
-      );
-      setFilteredBienes(filtered);
-    }
-  }, [searchText, bienes]);
-  
-  const navigation = useNavigation();
-  
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={estilos.tarjeta}
-      onPress={() => navigation.navigate('DetalleBien', { item })}
-    >
-      <Image
-        source={{ uri: item.modelo?.foto || "https://via.placeholder.com/60" }}
-        style={estilos.imagen}
-      />
-      <View style={estilos.contenedorInfo}>
-        <Text style={estilos.nombreDispositivo}>
-          {item.tipoBien?.nombre} - {item.lugar?.lugar}
-        </Text>
-        <Text style={estilos.responsableTexto}>Responsable: {item.usuario?.nombre}</Text>
-        <Text>Modelo: {item.modelo?.nombreModelo}</Text>
-        <Text>Marca: {item.marca?.nombre}</Text>
-      </View>
-      <View style={[estilos.estado, item.lugar ? estilos.ocupado : estilos.libre]}>
-  <MaterialIcons 
-    name={item.lugar ? "block" : "check-circle"} 
-    size={20} 
-    color="white" 
-  />
-  <Text style={estilos.estadoTexto}>
-    {item.lugar ? "" : "Libre"}
-  </Text>
-</View>
-    </TouchableOpacity>
-    
-  );
+  const filteredBienes = bienes.filter((item) => {
+    const lowercasedSearchText = searchText.toLowerCase();
+    return (
+      item.tipoBien?.nombre?.toLowerCase().includes(lowercasedSearchText) ||
+      item.lugar?.lugar?.toLowerCase().includes(lowercasedSearchText) ||
+      item.usuario?.nombre?.toLowerCase().includes(lowercasedSearchText) ||
+      item.modelo?.nombreModelo?.toLowerCase().includes(lowercasedSearchText) ||
+      item.codigoBarras?.toLowerCase().includes(lowercasedSearchText)
+    );
+  });
 
   return (
-    <SafeAreaView style={estilos.areaSegura}>
-      <StatusBar barStyle="light-content" backgroundColor="#6200ee" />
-      <View style={estilos.encabezado}>
-        <View style={estilos.etiquetaEncabezado}>
-          <Text style={estilos.textoEncabezado}>Administrador</Text>
-        </View>
-        <View style={estilos.barraBusquedaContenedor}>
-          <Ionicons name="search" size={24} color="#888" style={estilos.iconoLupa} />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#6a1b9a" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Administrador</Text>
+        <View style={styles.searchBarContainer}>
+          <Ionicons name="search" size={24} color="#888" style={styles.searchIcon} />
           <TextInput
-            style={estilos.barraBusqueda}
+            style={styles.searchBar}
             placeholder="Buscar..."
             placeholderTextColor="#888"
             value={searchText}
@@ -104,175 +92,172 @@ export default function PantallaAdminDispositivos() {
         </View>
       </View>
 
-      <View style={estilos.contenedorBlanco}>
+      {/* Content */}
+      <View style={styles.whiteContainer}>
         {error ? (
-          <Text style={estilos.errorTexto}>{error}</Text>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchBienes}>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <FlatList
             data={filteredBienes}
-            renderItem={renderItem}
+            renderItem={({ item }) => (
+              <BienItem
+                item={item}
+                onPress={(selectedItem) =>
+                  navigation.navigate("DetalleBien", { item: selectedItem })
+                }
+              />
+            )}
             keyExtractor={(item) => item.idBien.toString()}
-            contentContainerStyle={estilos.contenidoLista}
+            contentContainerStyle={styles.listContent}
           />
         )}
       </View>
 
-      <TouchableOpacity style={estilos.button} onPress={logout}>
-        <Text style={estilos.buttonText}>Cerrar Sesión</Text>
+      {/* Logout Button */}
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <Text style={styles.buttonText}>Cerrar Sesión</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
-const estilos = StyleSheet.create({
-  estado: {
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#1c1c1e",
+  },
+  header: {
+    backgroundColor: "#6a1b9a",
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    alignItems: "center",
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    shadowColor: "#ab47bc",
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+  },
+  headerText: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+  searchBarContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "#fff",
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginTop: 12,
+    width: "90%",
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchBar: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+  },
+  whiteContainer: {
+    flex: 1,
+    backgroundColor: "#303030",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 18,
+  },
+  listContent: {
+    paddingHorizontal: 8,
+  },
+  card: {
+    flexDirection: "row",
+    backgroundColor: "#424242",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 12,
+    alignItems: "center",
+  },
+  image: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#ff80ab",
+  },
+  infoContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  deviceName: {
+    fontWeight: "bold",
+    fontSize: 18,
+    color: "#fff",
+  },
+  responsibleText: {
+    fontSize: 14,
+    color: "#ccc",
+  },
+  status: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 20,
-    minWidth: 90,
+    minWidth: 80,
     alignSelf: "flex-start",
-    marginTop: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  libre: {
-    backgroundColor: "#4CAF50",
+  free: {
+    backgroundColor: "#00c853",
   },
-  ocupado: {
-    backgroundColor: "#E53935",
+  occupied: {
+    backgroundColor: "#d50000",
   },
-  estadoTexto: {
-    color: "white",
+  statusText: {
+    color: "#fff",
     fontSize: 14,
     fontWeight: "bold",
     marginLeft: 5,
   },
-  areaSegura: {
-    flex: 1,
-    backgroundColor: "#7d2bd3",
-  },
-  encabezado: {
-    backgroundColor: "#7d2bd3",
-    paddingHorizontal: 25,
-    paddingVertical: 18,
+  errorContainer: {
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    borderBottomLeftRadius: 35,
-    borderBottomRightRadius: 35,
   },
-  etiquetaEncabezado: {
-    backgroundColor: "#d9b3ff",
-    paddingHorizontal: 40,
-    paddingVertical: 8,
-    borderRadius: 25,
-    alignSelf: "flex-start",
-    marginBottom: 15,
-  },
-  textoEncabezado: {
-    color: "#3b3b3b",
-    fontSize: 24,
-    fontWeight: "bold",
-    letterSpacing: 1.5,
-  },
-  barraBusquedaContenedor: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    paddingHorizontal: 18,
-    marginHorizontal: 10,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  iconoLupa: {
-    marginRight: 12,
-  },
-  barraBusqueda: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: "#333",
-    paddingLeft: 10,
-  },
-  contenedorBlanco: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 37,
-    borderTopRightRadius: 37,
-    padding: 18,
-    flex: 1,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-  },
-  contenidoLista: {
-    paddingHorizontal: 8,
-  },
-  tarjeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 18,
-    marginBottom: 16,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-  },
-  imagen: {
-    width: 110,
-    height: 110,
-    marginRight: 16,
-    borderRadius: 12,
-    resizeMode: "cover",
-    borderWidth: 2,
-    borderColor: "#ddd",
-  },
-  contenedorInfo: {
-    flex: 1,
-  },
-  nombreDispositivo: {
-    fontWeight: "bold",
-    fontSize: 20,
-    color: "#333",
-  },
-  responsableTexto: {
-    fontSize: 15,
-    color: "#555",
-    marginBottom: 5,
-  },
-  errorTexto: {
-    color: "red",
+  errorText: {
+    color: "#ff1744",
     textAlign: "center",
     fontSize: 16,
   },
-  button: {
-    backgroundColor: "#7d2bd3",
+  retryButton: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: "#ff4081",
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  logoutButton: {
+    backgroundColor: "#d50000",
     padding: 14,
     borderRadius: 20,
-    width: "55%",
+    width: "60%",
     alignItems: "center",
     alignSelf: "center",
-    position: "absolute",
-    bottom: 15,
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+    marginBottom: 20,
   },
+  whiteText: {
+    color: "#fff",
+  },
+  
   buttonText: {
-    color: "white",
+    color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
   },
 });
-

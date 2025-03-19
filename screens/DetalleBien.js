@@ -49,25 +49,25 @@ export default function DetalleBien({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f9",
+    backgroundColor: "#1c1c1e", // Nuevo fondo oscuro
     padding: 16,
-    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
-    color: "#7d2bd3",
+    color: "#fff", // Título en color púrpura brillante
     textAlign: "center",
   },
   image: {
-    width: 180,
-    height: 180,
+    width: "100%",
+    height: 200,
     marginBottom: 24,
     borderRadius: 15,
     resizeMode: 'contain',
     borderWidth: 2,
-    borderColor: "#c084f5",
+    borderColor: "#6a1b9a", // Color del borde de la imagen
   },
   estadoContainer: {
     flexDirection: "row",
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 20,
+    borderRadius: 10,
     minWidth: 100,
     alignSelf: "center",
     marginBottom: 20,
@@ -85,10 +85,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   libre: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#00c853", // Verde para libre
   },
   ocupado: {
-    backgroundColor: "#E53935",
+    backgroundColor: "#d50000", // Rojo para ocupado
   },
   estadoTexto: {
     color: "white",
@@ -97,19 +97,17 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   detailsContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: "#303030", // Fondo oscuro para los detalles
     padding: 20,
     borderRadius: 20,
-    width: "100%",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
+    shadowColor: "#ab47bc", // Sombra púrpura brillante
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
     shadowRadius: 10,
-    marginBottom: 30,
   },
   detailText: {
     fontSize: 18,
-    color: "#333",
+    color: "#fff", // Texto blanco para visibilidad
     marginBottom: 12,
     lineHeight: 24,
   },
