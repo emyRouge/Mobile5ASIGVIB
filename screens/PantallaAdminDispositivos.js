@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   SafeAreaView,
   StatusBar,
   TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { AuthContext } from "../context/AuthContext";
 import { obtenerTodosLosBienes } from "../api/bienesApi";
@@ -20,16 +22,42 @@ const BienItem = ({ item, onPress }) => (
     <Image
       source={{ uri: item.modelo?.foto || "https://via.placeholder.com/110" }}
       style={styles.image}
+      resizeMode="cover"
     />
     <View style={styles.infoContainer}>
-      <Text style={styles.deviceName}>
-        {item.tipoBien?.nombre} - {item.lugar?.lugar}
+      <Text style={styles.deviceName} numberOfLines={1}>
+        {item.tipoBien?.nombre || "Dispositivo"}
       </Text>
-      <Text style={styles.whiteText}>Responsable: {item.usuario?.nombre}</Text>
-      <Text style={styles.whiteText}>Modelo: {item.modelo?.nombreModelo}</Text>
-<Text style={styles.whiteText}>Marca: {item.marca?.nombre}</Text>
-
+      
+      <View style={styles.detailRow}>
+        <MaterialIcons name="person" size={16} color="#bdbdbd" />
+        <Text style={styles.detailText} numberOfLines={1}>
+          {item.usuario?.nombre || "Sin asignar"}
+        </Text>
+      </View>
+      
+      <View style={styles.detailRow}>
+        <MaterialIcons name="devices" size={16} color="#bdbdbd" />
+        <Text style={styles.detailText} numberOfLines={1}>
+          {item.modelo?.nombreModelo || "Sin modelo"}
+        </Text>
+      </View>
+      
+      <View style={styles.detailRow}>
+        <MaterialCommunityIcons name="tag-outline" size={16} color="#bdbdbd" />
+        <Text style={styles.detailText} numberOfLines={1}>
+          {item.marca?.nombre || "Sin marca"}
+        </Text>
+      </View>
+      
+      <View style={styles.detailRow}>
+        <MaterialIcons name="location-on" size={16} color="#bdbdbd" />
+        <Text style={styles.detailText} numberOfLines={1}>
+          {item.lugar?.lugar || "Sin ubicación"}
+        </Text>
+      </View>
     </View>
+    
     <View style={[styles.status, item.lugar ? styles.occupied : styles.free]}>
       <MaterialIcons
         name={item.lugar ? "block" : "check-circle"}
@@ -47,15 +75,26 @@ export default function PantallaAdminDispositivos() {
   const [bienes, setBienes] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchBienes = async () => {
     try {
       setError(null);
+      setLoading(true);
       const data = await obtenerTodosLosBienes();
       setBienes(data);
     } catch (err) {
-      setError("No se pudieron cargar los bienes. Intenta nuevamente.");
+      setError("No se pudieron cargar los dispositivos. Intenta nuevamente.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchBienes();
   };
 
   useEffect(() => {
@@ -69,9 +108,23 @@ export default function PantallaAdminDispositivos() {
       item.lugar?.lugar?.toLowerCase().includes(lowercasedSearchText) ||
       item.usuario?.nombre?.toLowerCase().includes(lowercasedSearchText) ||
       item.modelo?.nombreModelo?.toLowerCase().includes(lowercasedSearchText) ||
+      item.marca?.nombre?.toLowerCase().includes(lowercasedSearchText) ||
       item.codigoBarras?.toLowerCase().includes(lowercasedSearchText)
     );
   });
+
+  const renderEmptyList = () => {
+    if (loading) return null;
+    
+    return (
+      <View style={styles.emptyContainer}>
+        <MaterialIcons name="devices-other" size={64} color="#9e9e9e" />
+        <Text style={styles.emptyText}>
+          {searchText ? "No se encontraron dispositivos que coincidan con la búsqueda" : "No hay dispositivos disponibles"}
+        </Text>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -79,48 +132,103 @@ export default function PantallaAdminDispositivos() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Administrador</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.headerText}>Panel de Administración</Text>
+          <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+            <MaterialIcons name="logout" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+        
         <View style={styles.searchBarContainer}>
-          <Ionicons name="search" size={24} color="#888" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
           <TextInput
             style={styles.searchBar}
-            placeholder="Buscar..."
+            placeholder="Buscar dispositivo, responsable, ubicación..."
             placeholderTextColor="#888"
             value={searchText}
             onChangeText={setSearchText}
           />
+          {searchText ? (
+            <TouchableOpacity onPress={() => setSearchText("")}>
+              <Ionicons name="close-circle" size={20} color="#888" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+
+      {/* Stats Bar */}
+      <View style={styles.statsBar}>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{bienes.length}</Text>
+          <Text style={styles.statLabel}>Total</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>
+            {bienes.filter(item => !item.lugar).length}
+          </Text>
+          <Text style={styles.statLabel}>Libres</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>
+            {bienes.filter(item => item.lugar).length}
+          </Text>
+          <Text style={styles.statLabel}>Ocupados</Text>
         </View>
       </View>
 
       {/* Content */}
-      <View style={styles.whiteContainer}>
+      <View style={styles.contentContainer}>
         {error ? (
           <View style={styles.errorContainer}>
+            <MaterialIcons name="error-outline" size={64} color="#ff5252" />
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={fetchBienes}>
               <Text style={styles.retryButtonText}>Reintentar</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <FlatList
-            data={filteredBienes}
-            renderItem={({ item }) => (
-              <BienItem
-                item={item}
-                onPress={(selectedItem) =>
-                  navigation.navigate("DetalleBien", { item: selectedItem })
+          <>
+            {loading && !refreshing ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#6a1b9a" />
+                <Text style={styles.loadingText}>Cargando dispositivos...</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredBienes}
+                renderItem={({ item }) => (
+                  <BienItem
+                    item={item}
+                    onPress={(selectedItem) =>
+                      navigation.navigate("DetalleBien", { item: selectedItem })
+                    }
+                  />
+                )}
+                keyExtractor={(item) => item.idBien.toString()}
+                contentContainerStyle={styles.listContent}
+                ListEmptyComponent={renderEmptyList}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={["#6a1b9a"]}
+                    tintColor="#6a1b9a"
+                  />
                 }
               />
             )}
-            keyExtractor={(item) => item.idBien.toString()}
-            contentContainerStyle={styles.listContent}
-          />
+          </>
         )}
       </View>
 
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.buttonText}>Cerrar Sesión</Text>
+      {/* Floating Action Button */}
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => navigation.navigate("Scanner")}
+      >
+        <MaterialIcons name="qr-code-scanner" size={24} color="white" />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -129,18 +237,26 @@ export default function PantallaAdminDispositivos() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#1c1c1e",
+    backgroundColor: "#121212",
   },
   header: {
     backgroundColor: "#6a1b9a",
     paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingTop: 16,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-    shadowColor: "#ab47bc",
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    marginBottom: 16,
   },
   headerText: {
     color: "#fff",
@@ -153,8 +269,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 25,
     paddingHorizontal: 15,
-    marginTop: 12,
-    width: "90%",
+    height: 46,
   },
   searchIcon: {
     marginRight: 10,
@@ -163,101 +278,179 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333",
+    height: 46,
+    padding: 0,
   },
-  whiteContainer: {
+  statsBar: {
+    flexDirection: "row",
+    backgroundColor: "#212121",
+    marginHorizontal: 20,
+    marginTop: -15,
+    borderRadius: 15,
+    padding: 15,
+    justifyContent: "space-around",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  statItem: {
+    alignItems: "center",
+  },
+  statValue: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  statLabel: {
+    color: "#9e9e9e",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  statDivider: {
+    width: 1,
+    height: "80%",
+    backgroundColor: "#424242",
+    alignSelf: "center",
+  },
+  contentContainer: {
     flex: 1,
-    backgroundColor: "#303030",
+    backgroundColor: "#1e1e1e",
+    marginTop: 20,
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    padding: 18,
+    overflow: "hidden",
   },
   listContent: {
-    paddingHorizontal: 8,
+    padding: 16,
+    paddingBottom: 80, // Extra space for FAB
   },
   card: {
     flexDirection: "row",
-    backgroundColor: "#424242",
-    borderRadius: 15,
-    padding: 15,
+    backgroundColor: "#2d2d2d",
+    borderRadius: 16,
+    padding: 12,
     marginBottom: 12,
-    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   image: {
-    width: 100,
-    height: 100,
+    width: 90,
+    height: 90,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#ff80ab",
+    backgroundColor: "#424242",
   },
   infoContainer: {
     flex: 1,
     marginLeft: 12,
+    justifyContent: "space-between",
   },
   deviceName: {
     fontWeight: "bold",
-    fontSize: 18,
+    fontSize: 16,
     color: "#fff",
+    marginBottom: 6,
   },
-  responsibleText: {
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  detailText: {
     fontSize: 14,
-    color: "#ccc",
+    color: "#e0e0e0",
+    marginLeft: 6,
+    flex: 1,
   },
   status: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 5,
-    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 20,
-    minWidth: 80,
-    alignSelf: "flex-start",
+    position: "absolute",
+    top: 12,
+    right: 12,
   },
   free: {
-    backgroundColor: "#00c853",
+    backgroundColor: "#388e3c",
   },
   occupied: {
-    backgroundColor: "#d50000",
+    backgroundColor: "#d32f2f",
   },
   statusText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
-    marginLeft: 5,
+    marginLeft: 4,
   },
   errorContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    padding: 20,
   },
   errorText: {
-    color: "#ff1744",
+    color: "#ff5252",
     textAlign: "center",
     fontSize: 16,
+    marginTop: 16,
+    marginBottom: 20,
   },
   retryButton: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: "#ff4081",
-    borderRadius: 20,
+    padding: 12,
+    backgroundColor: "#6a1b9a",
+    borderRadius: 25,
+    minWidth: 120,
+    alignItems: "center",
   },
   retryButtonText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    color: "#9e9e9e",
+    marginTop: 12,
+    fontSize: 16,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+  },
+  emptyText: {
+    color: "#9e9e9e",
+    textAlign: "center",
+    fontSize: 16,
+    marginTop: 16,
+  },
+  fab: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#6a1b9a",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
   logoutButton: {
-    backgroundColor: "#d50000",
-    padding: 14,
-    borderRadius: 20,
-    width: "60%",
-    alignItems: "center",
-    alignSelf: "center",
-    marginBottom: 20,
-  },
-  whiteText: {
-    color: "#fff",
-  },
-  
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    padding: 8,
   },
 });

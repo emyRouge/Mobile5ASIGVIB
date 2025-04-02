@@ -8,19 +8,20 @@ import {
   SafeAreaView,
   StatusBar,
   Image,
+  ScrollView,
   Dimensions,
 } from "react-native";
-import { PieChart } from "react-native-chart-kit";
 import { useNavigation } from "@react-navigation/native";
 import { AuthContext } from "../context/AuthContext";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
-const obtenerPorcentajeOcupacion = async () => {
+// API service function
+const fetchOccupationData = async () => {
   try {
     const response = await fetch("http://192.168.0.37:8080/bienes/porcentaje-ocupacion");
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || "Error al obtener los datos");
     }
@@ -37,18 +38,115 @@ const obtenerPorcentajeOcupacion = async () => {
   }
 };
 
+// Componente de gráfico mejorado
+const EnhancedChart = ({ ocupados, libres, bienesOcupados, bienesLibres }) => {
+  // Aseguramos que los valores sean números y sumen 100
+  const ocupadosValue = parseFloat(ocupados) || 0;
+  const libresValue = parseFloat(libres) || 0;
+  const total = ocupadosValue + libresValue;
+  
+  // Calculamos los porcentajes reales
+  const ocupadosPercent = total > 0 ? (ocupadosValue / total) * 100 : 0;
+  const libresPercent = total > 0 ? (libresValue / total) * 100 : 0;
+  
+  return (
+    <View style={styles.chartContainer}>
+      {/* Título del gráfico */}
+      <Text style={styles.chartTitle}>Distribución de Bienes</Text>
+      
+      {/* Barra de progreso horizontal que muestra la proporción */}
+      <View style={styles.progressContainer}>
+        <View style={styles.chartBar}>
+          <View 
+            style={[
+              styles.chartBarOcupados, 
+              { width: `${ocupadosPercent}%` }
+            ]} 
+          />
+          <View 
+            style={[
+              styles.chartBarLibres, 
+              { width: `${libresPercent}%` }
+            ]} 
+          />
+        </View>
+        
+        {/* Leyenda de la barra */}
+        <View style={styles.barLegend}>
+          <Text style={styles.barLegendText}>
+            {`${ocupadosPercent.toFixed(1)}%`}
+          </Text>
+          <Text style={styles.barLegendText}>
+            {`${libresPercent.toFixed(1)}%`}
+          </Text>
+        </View>
+      </View>
+      
+      {/* Círculos de representación visual */}
+      <View style={styles.chartCircles}>
+        <View style={styles.circleCard}>
+          <View style={styles.circleOcupados}>
+            <Text style={styles.circleNumber}>{bienesOcupados}</Text>
+          </View>
+          <View style={styles.circleInfo}>
+            <Text style={styles.circleLabel}>Ocupados</Text>
+            <Text style={[styles.circlePercent, styles.redText]}>
+              {`${ocupadosPercent.toFixed(1)}%`}
+            </Text>
+          </View>
+        </View>
+        
+        <View style={styles.circleCard}>
+          <View style={styles.circleLibres}>
+            <Text style={styles.circleNumber}>{bienesLibres}</Text>
+          </View>
+          <View style={styles.circleInfo}>
+            <Text style={styles.circleLabel}>Libres</Text>
+            <Text style={[styles.circlePercent, styles.greenText]}>
+              {`${libresPercent.toFixed(1)}%`}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// Componente de botón de acción
+const ActionButton = ({ icon, title, onPress, color = "#8e24aa", iconColor = "#fff" }) => (
+  <TouchableOpacity 
+    style={[styles.actionButton, { backgroundColor: color }]}
+    onPress={onPress}
+  >
+    <View style={styles.actionButtonContent}>
+      {icon && (
+        <View style={[styles.actionButtonIcon, { backgroundColor: iconColor }]}>
+          <Text style={[styles.actionButtonIconText, { color }]}>{icon}</Text>
+        </View>
+      )}
+      <Text style={styles.actionButtonText}>{title}</Text>
+    </View>
+  </TouchableOpacity>
+);
+
+// Main component
 const PantallaResumenBienes = () => {
   const navigation = useNavigation();
   const { logout } = useContext(AuthContext);
 
-  const [datos, setDatos] = useState({ ocupados: 0, libres: 0, bienesOcupados: 0, bienesLibres: 0 });
+  const [datos, setDatos] = useState({
+    ocupados: 0,
+    libres: 0,
+    bienesOcupados: 0,
+    bienesLibres: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchDatos = async () => {
+    const loadData = async () => {
       try {
-        const data = await obtenerPorcentajeOcupacion();
+        const data = await fetchOccupationData();
         setDatos(data);
       } catch (err) {
         setError("Error al obtener los datos");
@@ -57,61 +155,99 @@ const PantallaResumenBienes = () => {
       }
     };
 
-    fetchDatos();
+    loadData();
   }, []);
+
+  // Render different components based on state
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#9c27b0" />
+          <Text style={styles.loaderText}>Cargando datos...</Text>
+        </View>
+      );
+    }
+    
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>!</Text>
+          <Text style={styles.errorTitle}>Error de conexión</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => {
+              setLoading(true);
+              loadData();
+            }}
+          >
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    return (
+      <EnhancedChart 
+        ocupados={datos.ocupados} 
+        libres={datos.libres}
+        bienesOcupados={datos.bienesOcupados}
+        bienesLibres={datos.bienesLibres}
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#6a1b9a" />
-      <View style={styles.topSection}>
-        <Image source={require("../assets/logo1.png")} style={styles.logo} />
-        <Text style={styles.title}>Resumen de Bienes</Text>
+      
+      {/* Header con logo y título */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <Image source={require("../assets/logo1.png")} style={styles.logo} />
+          <Text style={styles.title}>Resumen de Bienes</Text>
+        </View>
+        
+        {/* Botón de cerrar sesión en el header */}
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={logout}
+        >
+          <Text style={styles.logoutText}>Salir</Text>
+        </TouchableOpacity>
       </View>
-  
-      <View style={styles.content}>
-        {loading ? (
-          <ActivityIndicator size="large" color="#ff4081" />
-        ) : error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : (
-          <View style={styles.chartContainer}>
-            <PieChart
-              data={[
-                { name: "Ocupados", population: datos.ocupados, color: "#d50000", legendFontColor: "#fff", legendFontSize: 15 },
-                { name: "Libres", population: datos.libres, color: "#00c853", legendFontColor: "#fff", legendFontSize: 15 },
-              ]}
-              width={width - 40}
-              height={220}
-              chartConfig={{
-                backgroundColor: "#303030",
-                backgroundGradientFrom: "#6a1b9a",
-                backgroundGradientTo: "#ab47bc",
-                decimalPlaces: 2,
-                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              }}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="15"
-              absolute
-            />
-            <Text style={styles.info}>Bienes Ocupados: {datos.bienesOcupados}</Text>
-            <Text style={styles.info}>Bienes Libres: {datos.bienesLibres}</Text>
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Contenedor principal */}
+        <View style={styles.mainContainer}>
+          {/* Sección de estadísticas */}
+          <View style={styles.statsSection}>
+            {renderContent()}
           </View>
-        )}
-  
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("PantallaAdminDispositivos")}>
-          <Text style={styles.buttonText}>Ver Bienes</Text>
-        </TouchableOpacity>
-  
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Scanner")}>
-          <Text style={styles.buttonText}>Escanear Código</Text>
-        </TouchableOpacity>
-  
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.buttonText}>Cerrar Sesión</Text>
-        </TouchableOpacity>
-      </View>
+          
+          {/* Sección de acciones */}
+          <View style={styles.actionsSection}>
+            <Text style={styles.sectionTitle}>Acciones</Text>
+            
+            <ActionButton 
+              icon="👁️" 
+              title="Ver Todos los Bienes"
+              onPress={() => navigation.navigate("PantallaAdminDispositivos")}
+            />
+            
+            <ActionButton 
+              icon="📷" 
+              title="Escanear Código QR"
+              onPress={() => navigation.navigate("Scanner")}
+              color="#673ab7"
+            />
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -119,75 +255,259 @@ const PantallaResumenBienes = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1c1c1e",
+    backgroundColor: "#121212",
   },
-  topSection: {
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: "#6a1b9a",
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
-    shadowColor: "#ab47bc",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   logo: {
-    width: width * 0.25,
-    height: width * 0.25,
-    borderRadius: width * 0.125,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 2,
-    borderColor: "#ff80ab",
-    marginBottom: 15,
+    borderColor: "#fff",
+    marginRight: 12,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#fff",
-  },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    padding: 20,
-  },
-  chartContainer: {
-    marginBottom: 20,
-  },
-  info: {
-    fontSize: 16,
-    color: "#fff",
-    marginTop: 10,
-  },
-  button: {
-    backgroundColor: "#ff4081",
-    padding: 12,
-    borderRadius: 20,
-    marginTop: 20,
-    width: "70%",
-    alignItems: "center",
-    shadowColor: "#ff80ab",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    letterSpacing: 0.5,
   },
   logoutButton: {
-    backgroundColor: "#d50000",
-    padding: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 20,
-    marginTop: 10,
-    width: "70%",
+  },
+  logoutText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  mainContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  statsSection: {
+    marginBottom: 25,
+  },
+  actionsSection: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#bb86fc",
+    marginBottom: 15,
+    paddingLeft: 5,
+  },
+  // Estilos para el loader
+  loaderContainer: {
     alignItems: "center",
+    justifyContent: "center",
+    padding: 30,
+  },
+  loaderText: {
+    color: "#bb86fc",
+    marginTop: 15,
+    fontSize: 16,
+  },
+  // Estilos para el error
+  errorContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 23, 68, 0.1)",
+    padding: 25,
+    borderRadius: 15,
+    marginVertical: 20,
+  },
+  errorIcon: {
+    fontSize: 30,
+    color: "#ff1744",
+    fontWeight: "bold",
+    marginBottom: 10,
+    width: 50,
+    height: 50,
+    textAlign: "center",
+    lineHeight: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(255, 23, 68, 0.2)",
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#ff1744",
+    marginBottom: 10,
   },
   errorText: {
-    color: "#ff1744",
-    fontSize: 16,
+    color: "#fff",
     textAlign: "center",
-    marginVertical: 20,
+    marginBottom: 15,
+  },
+  retryButton: {
+    backgroundColor: "#ff1744",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  // Estilos para el gráfico mejorado
+  chartContainer: {
+    backgroundColor: "#1e1e1e",
+    borderRadius: 20,
+    padding: 20,
+    marginVertical: 10,
+    shadowColor: "#6a1b9a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  progressContainer: {
+    marginBottom: 25,
+  },
+  chartBar: {
+    flexDirection: "row",
+    height: 25,
+    width: "100%",
+    borderRadius: 12.5,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  chartBarOcupados: {
+    height: "100%",
+    backgroundColor: "#d50000",
+  },
+  chartBarLibres: {
+    height: "100%",
+    backgroundColor: "#00c853",
+  },
+  barLegend: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 5,
+  },
+  barLegendText: {
+    color: "#bbb",
+    fontSize: 12,
+  },
+  chartCircles: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  circleCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#2a2a2a",
+    borderRadius: 15,
+    padding: 15,
+    width: "48%",
+  },
+  circleOcupados: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#d50000",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  circleLibres: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#00c853",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  circleNumber: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  circleInfo: {
+    flex: 1,
+  },
+  circleLabel: {
+    color: "#fff",
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  circlePercent: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  redText: {
+    color: "#ff5252",
+  },
+  greenText: {
+    color: "#69f0ae",
+  },
+  // Estilos para los botones de acción
+  actionButton: {
+    borderRadius: 15,
+    marginBottom: 15,
+    shadowColor: "#8e24aa",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+    overflow: "hidden",
+  },
+  actionButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  actionButtonIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  actionButtonIconText: {
+    fontSize: 18,
+  },
+  actionButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
 });
 
