@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,8 +10,9 @@ import {
   Image,
   ScrollView,
   Dimensions,
+  RefreshControl,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { AuthContext } from "../context/AuthContext";
 
 const { width, height } = Dimensions.get("window");
@@ -142,25 +143,43 @@ const PantallaResumenBienes = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = async () => {
+    try {
+      setError(null);
+      const data = await fetchOccupationData();
+      setDatos(data);
+    } catch (err) {
+      setError("Error al obtener los datos");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadData();
+  };
+
+  // Refresca los datos cuando la pantalla obtiene el foco
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      return () => {
+        // Limpieza opcional si es necesaria
+      };
+    }, [])
+  );
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await fetchOccupationData();
-        setDatos(data);
-      } catch (err) {
-        setError("Error al obtener los datos");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, []);
 
   // Render different components based on state
   const renderContent = () => {
-    if (loading) {
+    if (loading && !refreshing) {
       return (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#9c27b0" />
@@ -221,6 +240,14 @@ const PantallaResumenBienes = () => {
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#9c27b0"]}
+            tintColor="#9c27b0"
+          />
+        }
       >
         {/* Contenedor principal */}
         <View style={styles.mainContainer}>

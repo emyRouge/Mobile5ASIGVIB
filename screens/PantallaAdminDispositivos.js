@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from "react";
-import { useNavigation } from "@react-navigation/native";
+import React, { useState, useEffect, useContext, useCallback } from "react";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { MaterialIcons, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   View,
@@ -96,6 +96,16 @@ export default function PantallaAdminDispositivos() {
     setRefreshing(true);
     fetchBienes();
   };
+
+  // Refresca los datos cuando la pantalla obtiene el foco
+  useFocusEffect(
+    useCallback(() => {
+      fetchBienes();
+      return () => {
+        // Limpieza opcional si es necesaria
+      };
+    }, [])
+  );
 
   useEffect(() => {
     fetchBienes();
