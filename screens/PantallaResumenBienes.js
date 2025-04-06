@@ -14,14 +14,14 @@ import {
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { AuthContext } from "../context/AuthContext";
-import { API_IP } from '@env';
+import { API_BASE_URL } from '@env';
 
 const { width, height } = Dimensions.get("window");
 
 // API service function
 const fetchOccupationData = async () => {
   try {
-    const response = await fetch(`http://${API_IP}:8080/bienes/porcentaje-ocupacion`);
+    const response = await fetch(`${API_BASE_URL}/bienes/porcentaje-ocupacion`);
     const data = await response.json();
 
     if (!response.ok) {
