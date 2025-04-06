@@ -11,9 +11,9 @@
       "unstable_bridgeless": false
     },
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#121212"
     },
     "ios": {
       "supportsTablet": true
@@ -21,8 +21,8 @@
     "android": {
       "package": "com.tudominio.integradora5A",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#121212"
       }
     },
     "web": {

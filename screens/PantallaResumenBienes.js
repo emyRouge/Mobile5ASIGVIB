@@ -14,13 +14,14 @@ import {
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { AuthContext } from "../context/AuthContext";
+import { API_IP } from '@env';
 
 const { width, height } = Dimensions.get("window");
 
 // API service function
 const fetchOccupationData = async () => {
   try {
-    const response = await fetch("http://192.168.0.37:8080/bienes/porcentaje-ocupacion");
+    const response = await fetch(`http://${API_IP}:8080/bienes/porcentaje-ocupacion`);
     const data = await response.json();
 
     if (!response.ok) {
@@ -224,7 +225,7 @@ const PantallaResumenBienes = () => {
       {/* Header con logo y título */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Image source={require("../assets/logo1.png")} style={styles.logo} />
+          <Image source={require("../assets/icon.png")} style={styles.logo} />
           <Text style={styles.title}>Resumen de Bienes</Text>
         </View>
         

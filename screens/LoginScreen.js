@@ -134,7 +134,7 @@ const LoginScreen = () => {
         >
           <View style={styles.logoContainer}>
             <Animated.Image 
-              source={require("../assets/logo1.png")} 
+              source={require("../assets/icon.png")} 
               style={[
                 styles.profileImage,
                 { transform: [{ rotate: spin }] }
@@ -206,9 +206,7 @@ const LoginScreen = () => {
             )}
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-          </TouchableOpacity>
+        
         </Animated.View>
 
         <Animated.View 

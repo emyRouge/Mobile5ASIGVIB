@@ -1,5 +1,6 @@
 import { createContext, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";  // ✅ IMPORTA ESTO
+import { API_IP } from '@env';
 
 export const AuthContext = createContext();
 
@@ -9,7 +10,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await fetch("http://192.168.0.37:8080/auth/login", {
+      const response = await fetch(`http://${API_IP}:8080/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

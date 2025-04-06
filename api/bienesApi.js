@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_IP } from '@env';
 
 // Obtener el token del almacenamiento local
 const obtenerToken = async () => {
@@ -19,7 +20,7 @@ export const obtenerTodosLosBienes = async () => {
       throw new Error('No se encontró un token válido');
     }
 
-    const response = await fetch("http://192.168.0.37:8080/bienes", {
+    const response = await fetch(`http://${API_IP}:8080/bienes`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

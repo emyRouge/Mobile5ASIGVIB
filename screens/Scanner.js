@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button, StyleSheet, Text, TouchableOpacity, View, Alert, Image, Animated, ScrollView } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialIcons } from "@expo/vector-icons";
+import { API_IP } from '@env';
 
 export default function Scanner() {
   const [facing, setFacing] = useState("back");
@@ -63,7 +64,7 @@ export default function Scanner() {
         return;
       }
 
-      const response = await fetch(`http://192.168.0.37:8080/bienes/buscar/${data}`, {
+      const response = await fetch(`http://${API_IP}:8080/bienes/buscar/${data}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
